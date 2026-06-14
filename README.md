@@ -245,6 +245,7 @@ docker-compose up --build -d
 | **Prometheus** | http://localhost:9090 | — |
 | **Zipkin** | http://localhost:9411 | — |
 | **Kafka UI** | http://localhost:8090 | — |
+| **Loki** | http://localhost:3100 | — |
 
 ### 로컬 개발 환경 (인프라만 Docker)
 
