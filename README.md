@@ -244,6 +244,7 @@ docker-compose up --build -d
 | **Grafana** | http://localhost:3000 | admin / admin123 |
 | **Prometheus** | http://localhost:9090 | — |
 | **Zipkin** | http://localhost:9411 | — |
+| **Kafka UI** | http://localhost:8090 | — |
 
 ### 로컬 개발 환경 (인프라만 Docker)
 

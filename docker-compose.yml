@@ -62,6 +62,19 @@ services:
       retries: 10
       start_period: 30s
 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: ecommerce-kafka-ui
+    environment:
+      SERVER_PORT: 8090
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8090:8090"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: ecommerce-zipkin
