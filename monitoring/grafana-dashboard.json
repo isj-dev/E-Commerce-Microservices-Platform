@@ -1,0 +1,216 @@
+{
+  "dashboard": {
+    "title": "Ecommerce Microservices",
+    "uid": "ecommerce-msa",
+    "tags": ["spring-boot", "microservices"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "schemaVersion": 38,
+    "panels": [
+      {
+        "id": 1,
+        "title": "HTTP 요청 처리량 (RPS)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m]))",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "HTTP 평균 응답시간 (ms)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (rate(http_server_requests_seconds_sum{uri!~\"/actuator.*\"}[1m])) / sum by (job) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m])) * 1000",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "HTTP 에러율 (5xx)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "custom": {"lineWidth": 2},
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (rate(http_server_requests_seconds_count{status=~\"5..\",uri!~\"/actuator.*\"}[1m])) / sum by (job) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m]))",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "JVM 힙 메모리 사용량",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (jvm_memory_used_bytes{area=\"heap\"})",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "서비스별 현재 상태 (RPS)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 16},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 10},
+                {"color": "red", "value": 50}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {"calcs": ["lastNotNull"]},
+          "orientation": "horizontal",
+          "textMode": "auto",
+          "colorMode": "background"
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (rate(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m]))",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "DB 커넥션 풀 사용량 (HikariCP)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "hikaricp_connections_active",
+            "legendFormat": "active - {{job}}"
+          },
+          {
+            "expr": "hikaricp_connections_idle",
+            "legendFormat": "idle - {{job}}"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Kafka 리스너 처리량",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "rate(spring_kafka_listener_seconds_count[1m])",
+            "legendFormat": "{{job}} - {{name}}"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "JVM GC 횟수",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (job) (rate(jvm_gc_pause_seconds_count[1m]))",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "CPU 사용률",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "max": 1,
+            "custom": {"lineWidth": 2}
+          }
+        },
+        "targets": [
+          {
+            "expr": "process_cpu_usage",
+            "legendFormat": "{{job}}"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "pluginId": "prometheus",
+          "hide": 0,
+          "label": "Datasource"
+        }
+      ]
+    },
+    "time": {"from": "now-15m", "to": "now"}
+  },
+  "overwrite": true,
+  "folderId": 0
+}

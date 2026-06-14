@@ -1,0 +1,158 @@
+import json
+import urllib.request
+import base64
+import sys
+
+GRAFANA_URL = "http://localhost:3000"
+GRAFANA_AUTH = base64.b64encode(b"admin:admin123").decode()
+
+def get_ds_uid():
+    req = urllib.request.Request(
+        f"{GRAFANA_URL}/api/datasources/name/Prometheus",
+        headers={"Authorization": f"Basic {GRAFANA_AUTH}"}
+    )
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read())["uid"]
+
+def upload(dashboard_json):
+    payload = json.dumps(dashboard_json, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        f"{GRAFANA_URL}/api/dashboards/import",
+        data=payload,
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Authorization": f"Basic {GRAFANA_AUTH}"
+        }
+    )
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read())
+
+ds_uid = get_ds_uid()
+ds = {"type": "prometheus", "uid": ds_uid}
+
+dashboard = {
+    "title": "Ecommerce Microservices",
+    "uid": "ecommerce-msa",
+    "tags": ["spring-boot", "microservices"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "schemaVersion": 38,
+    "panels": [
+        {
+            "id": 1, "title": "HTTP 요청 처리량 (RPS)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": 'sum by (job) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 2, "title": "HTTP 평균 응답시간 (ms)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "ms", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": 'sum by (job) (rate(http_server_requests_seconds_sum{uri!~"/actuator.*"}[1m])) / sum by (job) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m])) * 1000', "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 3, "title": "HTTP 에러율 (5xx)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "percentunit", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": 'sum by (job) (rate(http_server_requests_seconds_count{status=~"5..",uri!~"/actuator.*"}[1m])) / sum by (job) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 4, "title": "JVM 힙 메모리 사용량",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "bytes", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": 'sum by (job) (jvm_memory_used_bytes{area="heap"})', "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 5, "title": "서비스별 현재 상태 (RPS)",
+            "type": "stat",
+            "gridPos": {"h": 4, "w": 24, "x": 0, "y": 16},
+            "datasource": ds,
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "reqps",
+                    "thresholds": {"mode": "absolute", "steps": [
+                        {"color": "green", "value": None},
+                        {"color": "yellow", "value": 10},
+                        {"color": "red", "value": 50}
+                    ]}
+                }
+            },
+            "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "horizontal", "textMode": "auto", "colorMode": "background"},
+            "targets": [{"expr": 'sum by (job) (rate(http_server_requests_seconds_count{uri!~"/actuator.*"}[1m]))', "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 6, "title": "DB 커넥션 풀 사용량 (HikariCP)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
+            "targets": [
+                {"expr": "hikaricp_connections_active", "legendFormat": "active - {{job}}"},
+                {"expr": "hikaricp_connections_idle",   "legendFormat": "idle - {{job}}"}
+            ]
+        },
+        {
+            "id": 7, "title": "Kafka 리스너 처리량",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": "rate(spring_kafka_listener_seconds_count[1m])", "legendFormat": "{{job}} - {{name}}"}]
+        },
+        {
+            "id": 8, "title": "JVM GC 횟수",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "ops", "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": "sum by (job) (rate(jvm_gc_pause_seconds_count[1m]))", "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 9, "title": "CPU 사용률",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "percentunit", "max": 1, "custom": {"lineWidth": 2}}},
+            "targets": [{"expr": "process_cpu_usage", "legendFormat": "{{job}}"}]
+        },
+        {
+            "id": 10, "title": "Circuit Breaker 상태 (1=해당 상태 활성)",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 36},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
+            "targets": [
+                {"expr": 'resilience4j_circuitbreaker_state{state="open"}',      "legendFormat": "OPEN - {{name}}"},
+                {"expr": 'resilience4j_circuitbreaker_state{state="half_open"}', "legendFormat": "HALF_OPEN - {{name}}"},
+                {"expr": 'resilience4j_circuitbreaker_state{state="closed"}',    "legendFormat": "CLOSED - {{name}}"}
+            ]
+        },
+        {
+            "id": 11, "title": "Circuit Breaker 실패율 & 차단 호출",
+            "type": "timeseries",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 36},
+            "datasource": ds,
+            "fieldConfig": {"defaults": {"unit": "short", "custom": {"lineWidth": 2}}},
+            "targets": [
+                {"expr": "resilience4j_circuitbreaker_failure_rate",                           "legendFormat": "실패율(%) - {{name}}"},
+                {"expr": "rate(resilience4j_circuitbreaker_not_permitted_calls_total[1m])*60", "legendFormat": "차단호출/min - {{name}}"}
+            ]
+        }
+    ],
+    "templating": {
+        "list": [{"name": "datasource", "type": "datasource", "pluginId": "prometheus", "hide": 0, "label": "Datasource"}]
+    },
+    "time": {"from": "now-15m", "to": "now"}
+}
+
+result = upload({"dashboard": dashboard, "overwrite": True, "folderId": 0})
+print(f"status: {result.get('status', 'ok')}")
+print(f"url:    http://localhost:3000{result.get('importedUrl', '')}")

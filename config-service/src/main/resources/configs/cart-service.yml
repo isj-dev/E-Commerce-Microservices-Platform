@@ -1,0 +1,15 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis123
+
+cart:
+  ttl-hours: 24
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
