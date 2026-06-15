@@ -5,7 +5,7 @@ spring:
     compatibility-verifier:
       enabled: false
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://localhost:8888 # 서비스 부팅 시 해당 url 호출하여 설정 가져오기
 
 server:
   port: 8081
