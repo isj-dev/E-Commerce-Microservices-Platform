@@ -497,7 +497,7 @@ ecommerce/
 | `SPRING_CONFIG_IMPORT` | `optional:configserver:http://config-service:8888` | 전체 |
 | `MANAGEMENT_TRACING_EXPORT_ZIPKIN_ENDPOINT` | `http://zipkin:9411/api/v2/spans` | 전체 |
 
-### CI/CD
+### CI/CD(미구현)
 
 GitHub Actions (`.github/workflows/ci.yml`)
 
