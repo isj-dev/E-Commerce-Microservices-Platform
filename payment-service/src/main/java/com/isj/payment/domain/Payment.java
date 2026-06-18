@@ -57,6 +57,9 @@ public class Payment {
     }
 
     public enum PaymentStatus {
-        PENDING, COMPLETED, FAILED, REFUNDED
+        PENDING, // 생성(보류)
+        COMPLETED, // 완료
+        FAILED, // 실패
+        REFUNDED// 롤백(환불)
     }
 }

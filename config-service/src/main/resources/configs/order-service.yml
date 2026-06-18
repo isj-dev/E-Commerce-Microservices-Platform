@@ -7,10 +7,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true # sql 로그
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
   kafka:
     bootstrap-servers: localhost:9094
     producer:
@@ -18,17 +19,22 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   cloud:
     openfeign:
-      circuitbreaker:
+      circuitbreaker: # CB 설정 활성화
         enabled: true
 
+logging:
+  level:
+    org.hibernate.SQL: DEBUG # sql 로그 LEVEL
+    org.hibernate.orm.jdbc.bind: TRACE
+
 resilience4j:
-  circuitbreaker:
+  circuitbreaker: # CB 설정
     configs:
       default:
         sliding-window-type: COUNT_BASED
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        sliding-window-size: 10 # 최근 10번 요청 관찰
+        failure-rate-threshold: 50 # 50% 이상 실패 시 Circuit OPEN
+        wait-duration-in-open-state: 10s # 10초 동안 요청 차단 후 Half-OPEN
         permitted-number-of-calls-in-half-open-state: 3
         register-health-indicator: true
     instances:

@@ -19,6 +19,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+// Swagger 문서의 servers 필드를 Gateway URL로 교체하는 필터
 @Component
 public class OpenApiServerRewriteFilter implements GlobalFilter, Ordered {
 
@@ -32,23 +33,29 @@ public class OpenApiServerRewriteFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        // 1. /service-docs/ 경로가 아니면 그냥 통과
         if (!path.startsWith("/service-docs/")) {
             return chain.filter(exchange);
         }
 
         ServerHttpResponse originalResponse = exchange.getResponse();
+
+        // 2. 응답을 가로채는 데코레이터 생성
         ServerHttpResponseDecorator decorator = new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public Mono<Void> writeWith(org.reactivestreams.Publisher<? extends DataBuffer> body) {
                 return DataBufferUtils.join(Flux.from(body))
                         .flatMap(dataBuffer -> {
+                            // 응답 바이트를 모두 읽음
                             byte[] bytes = new byte[dataBuffer.readableByteCount()];
                             dataBuffer.read(bytes);
                             DataBufferUtils.release(dataBuffer);
 
                             try {
+                                // JSON으로 파싱
                                 ObjectNode doc = (ObjectNode) objectMapper.readTree(bytes);
 
+                                // servers 필드를 Gateway URL로 교체
                                 ArrayNode servers = objectMapper.createArrayNode();
                                 ObjectNode server = objectMapper.createObjectNode();
                                 server.put("url", gatewayUrl);
@@ -56,6 +63,7 @@ public class OpenApiServerRewriteFilter implements GlobalFilter, Ordered {
                                 servers.add(server);
                                 doc.set("servers", servers);
 
+                                // 수정된 JSON을 응답으로 반환
                                 byte[] modified = objectMapper.writeValueAsBytes(doc);
                                 getDelegate().getHeaders().set(HttpHeaders.CONTENT_LENGTH,
                                         String.valueOf(modified.length));
@@ -70,11 +78,12 @@ public class OpenApiServerRewriteFilter implements GlobalFilter, Ordered {
             }
         };
 
+        // 수정된 응답 데코레이터로 요청 처리
         return chain.filter(exchange.mutate().response(decorator).build());
     }
 
     @Override
     public int getOrder() {
         return -2;
-    }
+    } // 숫자가 낮을수록 먼저 실행
 }

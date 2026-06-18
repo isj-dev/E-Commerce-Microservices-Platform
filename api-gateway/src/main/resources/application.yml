@@ -114,7 +114,7 @@ spring:
                   args:
                     regexp: /api/v1/(?<segment>.*)
                     replacement: /${segment}
-                - name: JwtAuthenticationFilter
+                - name: JwtAuthenticationFilter # jwt 필터 적용
 
             - id: product-service
               uri: lb://product-service
@@ -139,7 +139,7 @@ spring:
                   args:
                     regexp: /api/v1/(?<segment>.*)
                     replacement: /${segment}
-                - name: JwtAuthenticationFilter
+                - name: JwtAuthenticationFilter # jwt 필터 적용
 
             - id: payment-service
               uri: lb://payment-service
@@ -152,7 +152,7 @@ spring:
                   args:
                     regexp: /api/v1/(?<segment>.*)
                     replacement: /${segment}
-                - name: JwtAuthenticationFilter
+                - name: JwtAuthenticationFilter # jwt 필터 적용
 
             - id: cart-service
               uri: lb://cart-service
@@ -165,7 +165,7 @@ spring:
                   args:
                     regexp: /api/v1/(?<segment>.*)
                     replacement: /${segment}
-                - name: JwtAuthenticationFilter
+                - name: JwtAuthenticationFilter # jwt 필터 적용
 
 server:
   port: 9000

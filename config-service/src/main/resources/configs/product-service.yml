@@ -7,10 +7,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
+    show-sql: true # sql 로그
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG # sql 로그 LEVEL
+    org.hibernate.orm.jdbc.bind: TRACE
 
 management:
   endpoints:

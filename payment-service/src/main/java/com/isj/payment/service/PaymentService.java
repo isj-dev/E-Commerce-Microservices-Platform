@@ -42,7 +42,8 @@ public class PaymentService {
                 .amount(event.getTotalAmount())
                 .build();
 
-        boolean success = random.nextDouble() < SUCCESS_RATE;
+
+        boolean success = random.nextDouble() < SUCCESS_RATE; // PG사 연동 대신 90% 확률로 성공하는 Mock 구현
         if (success) {
             payment.complete();
             log.info("Payment completed for orderId={}", event.getOrderId());

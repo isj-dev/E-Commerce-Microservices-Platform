@@ -15,6 +15,7 @@ public class NotificationService {
     public void handlePaymentEvent(PaymentEvent event) {
         log.info("Received payment event: orderId={}, status={}", event.getOrderId(), event.getStatus());
 
+        // NullPointerException 방지용 리터럴 사용
         if ("COMPLETED".equals(event.getStatus())) {
             sendOrderConfirmation(event);
         } else if ("FAILED".equals(event.getStatus())) {
@@ -23,6 +24,7 @@ public class NotificationService {
     }
 
     private void sendOrderConfirmation(PaymentEvent event) {
+        // 메시지 발행 로직
         log.info("[NOTIFICATION] Order #{} payment confirmed. Amount: {}. User: {}",
                 event.getOrderId(), event.getAmount(), event.getUserId());
     }

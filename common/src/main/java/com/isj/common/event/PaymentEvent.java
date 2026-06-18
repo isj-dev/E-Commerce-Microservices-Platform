@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 @Getter
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor  // Jackson 역직렬화용
 @AllArgsConstructor
 public class PaymentEvent {
     private Long paymentId;

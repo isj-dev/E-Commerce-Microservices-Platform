@@ -41,6 +41,7 @@ public class CartService {
         return getCart(userId);
     }
 
+    // 실무에선 Feign 으로 해당 서비스를 호출해 상품 정보를 가져와서 임시값을 채움
     public CartResponse getCart(Long userId) {
         String key = cartKey(userId);
         Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
@@ -48,10 +49,10 @@ public class CartService {
         List<CartResponse.CartItemResponse> items = entries.entrySet().stream()
                 .map(e -> CartResponse.CartItemResponse.builder()
                         .productId(Long.parseLong(e.getKey().toString()))
-                        .productName("Product-" + e.getKey())
+                        .productName("Product-" + e.getKey()) // 임시값
                         .quantity(Integer.parseInt(e.getValue().toString()))
-                        .unitPrice(BigDecimal.ZERO)
-                        .subtotal(BigDecimal.ZERO)
+                        .unitPrice(BigDecimal.ZERO) // 임시값
+                        .subtotal(BigDecimal.ZERO) // 임시값
                         .build())
                 .collect(Collectors.toList());
 
@@ -71,10 +72,11 @@ public class CartService {
         redisTemplate.delete(cartKey(userId));
     }
 
+    // addItem()과 달리 누적이 아닌 덮어쓰기(수량을 3개에서 5로 바꾸면 그냥 5가 저장)
     public CartResponse updateItem(Long userId, Long productId, int quantity) {
         String key = cartKey(userId);
         if (quantity <= 0) {
-            redisTemplate.opsForHash().delete(key, String.valueOf(productId));
+            redisTemplate.opsForHash().delete(key, String.valueOf(productId)); // 수량 0 이하면 삭제
         } else {
             redisTemplate.opsForHash().put(key, String.valueOf(productId), String.valueOf(quantity));
             redisTemplate.expire(key, ttlHours, TimeUnit.HOURS);

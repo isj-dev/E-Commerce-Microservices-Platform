@@ -39,6 +39,7 @@ public class KafkaConfig {
                 new JsonDeserializer<>(OrderEvent.class, false));
     }
 
+    // kafkaListenerContainerFactory 라는 이름이 Spring 의 기본 탐색 이름이라 @KafkaListener에서 별도 지정 없이 자동으로 연결
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, OrderEvent> kafkaListenerContainerFactory(
             ConsumerFactory<String, OrderEvent> orderEventConsumerFactory) {
