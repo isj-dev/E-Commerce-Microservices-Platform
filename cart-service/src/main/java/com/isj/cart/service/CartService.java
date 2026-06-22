@@ -1,5 +1,7 @@
 package com.isj.cart.service;
 
+import com.isj.cart.client.ProductClient;
+import com.isj.cart.client.ProductInfo;
 import com.isj.cart.dto.CartItemRequest;
 import com.isj.cart.dto.CartResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class CartService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ProductClient productClient;
 
     @Value("${cart.ttl-hours:24}")
     private long ttlHours;
@@ -41,27 +44,50 @@ public class CartService {
         return getCart(userId);
     }
 
-    // 실무에선 Feign 으로 해당 서비스를 호출해 상품 정보를 가져와서 임시값을 채움
     public CartResponse getCart(Long userId) {
         String key = cartKey(userId);
         Map<Object, Object> entries = redisTemplate.opsForHash().entries(key);
 
         List<CartResponse.CartItemResponse> items = entries.entrySet().stream()
-                .map(e -> CartResponse.CartItemResponse.builder()
-                        .productId(Long.parseLong(e.getKey().toString()))
-                        .productName("Product-" + e.getKey()) // 임시값
-                        .quantity(Integer.parseInt(e.getValue().toString()))
-                        .unitPrice(BigDecimal.ZERO) // 임시값
-                        .subtotal(BigDecimal.ZERO) // 임시값
-                        .build())
+                .map(e -> {
+                    Long productId = Long.parseLong(e.getKey().toString());
+                    int quantity = Integer.parseInt(e.getValue().toString());
+                    ProductInfo product = fetchProduct(productId);
+
+                    String productName = product != null ? product.getName() : "Unknown Product";
+                    BigDecimal unitPrice = product != null ? product.getPrice() : BigDecimal.ZERO;
+                    BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+                    return CartResponse.CartItemResponse.builder()
+                            .productId(productId)
+                            .productName(productName)
+                            .quantity(quantity)
+                            .unitPrice(unitPrice)
+                            .subtotal(subtotal)
+                            .build();
+                })
                 .collect(Collectors.toList());
+
+        BigDecimal totalAmount = items.stream()
+                .map(CartResponse.CartItemResponse::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartResponse.builder()
                 .userId(userId)
                 .items(items)
-                .totalAmount(BigDecimal.ZERO)
+                .totalAmount(totalAmount)
                 .totalItems(items.stream().mapToInt(CartResponse.CartItemResponse::getQuantity).sum())
                 .build();
+    }
+
+    // product-service 장애 시 Circuit Breaker가 ProductClientFallback으로 빈 데이터를 반환
+    private ProductInfo fetchProduct(Long productId) {
+        try {
+            return productClient.getProduct(productId).getData();
+        } catch (Exception e) {
+            log.error("Failed to fetch product info: productId={}", productId, e);
+            return null;
+        }
     }
 
     public void removeItem(Long userId, Long productId) {

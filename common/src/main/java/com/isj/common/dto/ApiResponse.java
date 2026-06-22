@@ -1,5 +1,7 @@
 package com.isj.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -9,7 +11,11 @@ public class ApiResponse<T> {
     private final String message;
     private final T data;
 
-    private ApiResponse(boolean success, String message, T data) {
+    @JsonCreator // Feign 등 다른 서비스가 JSON 응답을 역직렬화할 때 사용할 생성자
+    private ApiResponse(
+            @JsonProperty("success") boolean success,
+            @JsonProperty("message") String message,
+            @JsonProperty("data") T data) {
         this.success = success;
         this.message = message;
         this.data = data;
